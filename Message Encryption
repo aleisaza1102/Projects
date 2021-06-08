@@ -1,0 +1,135 @@
+import javax.swing.JOptionPane;
+//Creates a JOP class to serve for graphics
+public class JOP {
+  //Helps create the JOP for the program
+  public static void msg(Object msg) {
+    JOptionPane.showMessageDialog(null, msg);
+  }
+ //Helps create the JOP for the program 
+  public static String in(Object msg) {
+    return JOptionPane.showInputDialog(msg);
+  }
+}
+//Main class that runs the whole program
+public class Main {
+ //Main method of the program
+ public static void main(String[] args) {
+    Detect.runPro();
+  }
+}
+//Gives feedback to the user if their message was encrypted or not and if they're doing things right.
+public class Detect {
+  public static String display(String message) {
+    int rows = (int)Math.sqrt(Math.sqrt(message.length()));
+    return "Row Count: " + rows + "\n " + "Column Count: " + rows + "\n " + "Rows*Columns (EncryptBlock Total): " + (rows * rows);
+  }
+  //Asks the player if they would like to encrypt a message, gives the player the option to decode the message too and option to see them.
+  public static void runPro() {
+    boolean mainset = true;
+    while (mainset) {
+      String encMsg = "";
+      String ans1 = "";
+      boolean isOn1 = true;
+      while (isOn1) {
+        ans1 = JOP.in("Would you like to Encode a message? [y/n or exit]");
+        if (ans1.equalsIgnoreCase("y")) {
+          isOn1 = false;
+          continue;
+        } 
+        if (ans1.equalsIgnoreCase("n")) {
+          JOP.msg("Okay, Let's try this again.");
+          continue;
+        } 
+        if (ans1.equalsIgnoreCase("exit"))
+          System.exit(0); 
+      } 
+      String ans2 = "";
+      boolean isOn2 = true;
+      while (isOn2) {
+        ans2 = JOP.in("What message would you like to encode? [Type your message]");
+        encMsg = Cypher.encrypt(ans2);
+        isOn2 = false;
+      } 
+      String ans3 = "";
+      boolean isOn3 = true;
+      while (isOn3) {
+        ans3 = JOP.in("What would you like to do? [Reset, Info, Decode, Encrypted, Exit]");
+        if (ans3.equalsIgnoreCase("Reset")) {
+          isOn3 = false;
+          continue;
+        } 
+        if (ans3.equalsIgnoreCase("Info")) {
+          JOP.msg(display(encMsg));
+          continue;
+        } 
+        if (ans3.equalsIgnoreCase("Encrypted")) {
+          JOP.msg("Your Encrypted Message is: " + encMsg);
+          continue;
+        } 
+        if (ans3.equalsIgnoreCase("Decode")) {
+          JOP.msg("Your Decrypted Message is: " + Cypher.decrypt(encMsg));
+          continue;
+        } 
+        if (ans3.equalsIgnoreCase("exit"))
+          System.exit(0); 
+      } 
+    } 
+  }
+}
+
+import java.util.HashMap;
+//Class that carries out the actual encryption and decoding process
+public class Cypher {
+  private static HashMap<String, String> numsToLetters = generateNumsToLetters();
+  
+  private static HashMap<String, String> lettersToNums = generateLetterstoNums();
+  //Constructor which converts letters to numbers and numbers to letters for encryption and decryption
+  public Cypher() {
+    for (int charNum = 0, indexNum = 0; charNum <= 127; charNum++, indexNum++) {
+      numsToLetters.put(indexNum, Character.toString((char)charNum));
+      lettersToNums.put(Character.toString((char)charNum), indexNum);
+    } 
+  }
+  //Encrypts a message and makes it into a line of numbers 
+  public static String encrypt(String message) {
+    String tempMessage = "";
+    char[] charArray = message.toCharArray();
+    byte b;
+    int i;
+    char[] arrayOfChar1;
+    for (i = (arrayOfChar1 = charArray).length, b = 0; b < i; ) {
+      char c = arrayOfChar1[b];
+      tempMessage = String.valueOf(tempMessage) + (String)lettersToNums.get(Character.toString(c)) + " ";
+      b++;
+    } 
+    return tempMessage;
+  }
+  //Pulls out the line of numbers and is able to turn it into the original message
+  public static String decrypt(String message) {
+    String[] arrayMessage = message.split(" ", 0);
+    String tempMessage = "";
+    byte b;
+    int i;
+    String[] arrayOfString1;
+    for (i = (arrayOfString1 = arrayMessage).length, b = 0; b < i; ) {
+      String block = arrayOfString1[b];
+      tempMessage = String.valueOf(tempMessage) + (String)numsToLetters.get(block);
+      b++;
+    } 
+    return tempMessage;
+  }
+  //Generates the letters from the line of numbers that were used to encrypt a message 
+  public static HashMap<String, String> generateNumsToLetters() {
+    HashMap<String, String> numsToLetters = new HashMap<String, String>();
+    for (int charNum = 0, indexNum = 0; charNum <= 127; charNum++, indexNum++)
+      numsToLetters.put(indexNum, Character.toString((char)charNum)); 
+    return numsToLetters;
+  }
+  //Generates the numbers from the original message as a way to encrypt a message
+  public static HashMap<String, String> generateLetterstoNums() {
+    HashMap<String, String> lettersToNums = new HashMap<String, String>();
+    for (int charNum = 0, indexNum = 0; charNum <= 127; charNum++, indexNum++)
+      lettersToNums.put(Character.toString((char)charNum), indexNum); 
+    return lettersToNums;
+  }
+}
