@@ -1,0 +1,449 @@
+import javax.swing.JOptionPane;
+//Creates a JOP class that serves as the graphics of the game
+public class JOP {
+  //Helps with creating the JOP
+  public static void msg(String msg) {
+    JOptionPane.showMessageDialog(null, msg);
+  }
+ //Helps with creating the JOP 
+  public static String in(String msg) {
+    return JOptionPane.showInputDialog(msg);
+  }
+}
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.Scanner;
+//Holds the main method of the game and tells user if they want to play against a CPU or another player
+public class Main {
+  public static boolean plrOrCpu;
+  
+  public static File list;
+  
+  public static File tmp;
+  
+  public static FileWriter fileWriter;
+  
+  public static BufferedWriter bufferedWriter;
+  
+  public static Scanner scan;
+  
+  static Player1 plr1;
+  
+  static Player2 plr2;
+  
+  static Computer cpu;
+  //Gives the option of playing against a CPU or another player as well as serving as the main method of the program and shows how many rounds are left
+  public static void main(String[] args) {
+    JOP.msg("This is a game of dice, where your objective is to get as many dice rolls in a row as possible.\nYou have 3 rerolls per game, use them wisely.");
+    try {
+      list = new File("./diceToss.txt");
+      tmp = new File(list + ".tmp");
+      fileWriter = new FileWriter(list, true);
+      bufferedWriter = new BufferedWriter(fileWriter);
+      scan = new Scanner(list);
+    } catch (Exception I) {
+      System.exit(0);
+    } 
+    plr1 = new Player1();
+    plr2 = new Player2();
+    cpu = new Computer();
+    while (true) {
+      String input = JOP.in("Do you want to play against a human or cpu? Enter H for human, C for cpu.");
+      if (input.equalsIgnoreCase("c")) {
+        plrOrCpu = false;
+        for (int i = 0; i < 6; i++) {
+          JOP.msg("There are " + (6 - i) + " rounds left. The score is " + plr1.getScore() + " (player 1) to " + cpu.getScore() + " (computer).");
+          plr1.playerTurn(i);
+          cpu.computerTurn(i);
+        } 
+        calculateWin(false);
+      } else if (input.equalsIgnoreCase("h")) {
+        plrOrCpu = true;
+        for (int i = 0; i < 6; i++) {
+          JOP.msg("There are " + (6 - i) + " rounds left. The score is " + plr1.getScore() + " (player 1) to " + plr2.getScore() + " (player 2).");
+          plr1.playerTurn(i);
+          plr2.playerTurn(i);
+        } 
+        calculateWin(true);
+      } else if (input == null) {
+        SaveLoad.save();
+      } 
+      plr1.reset();
+      plr2.reset();
+      cpu.reset();
+    } 
+  }
+  //Calculates to see who wins in each match either CPU or player 1 and 2
+  public static boolean calculateWin(boolean plrOrCpu) {
+    if (plrOrCpu) {
+      if (plr1.getScore() > plr2.getScore()) {
+        JOP.msg("Player 1 wins the game! " + plr1.getScore() + " to " + plr2.getScore());
+        plr2.addLoss();
+        plr1.addWin();
+        return true;
+      } 
+      if (plr1.getScore() < plr2.getScore()) {
+        JOP.msg("Player 2 wins the game! " + plr1.getScore() + " to " + plr2.getScore());
+        plr1.addLoss();
+        plr2.addWin();
+        return false;
+      } 
+      JOP.msg("No one wins... (tie)" + plr1.getScore() + " to " + plr2.getScore());
+      return false;
+    } 
+    if (plr1.getScore() > cpu.getScore()) {
+      JOP.msg("Player 1 wins the game! " + plr1.getScore() + " to " + plr2.getScore());
+      plr2.addLoss();
+      cpu.addWin();
+      return true;
+    } 
+    if (plr1.getScore() < cpu.getScore()) {
+      JOP.msg("Cpu wins the game! " + plr1.getScore() + " to " + plr2.getScore());
+      plr1.addLoss();
+      cpu.addWin();
+      return false;
+    } 
+    JOP.msg("No one wins... (tie)" + plr1.getScore() + " to " + plr2.getScore());
+    return false;
+  }
+}
+//Creates an abstract player class that is used to save data of that player
+public abstract class Player {
+  int curRoll;
+  
+  int prevRol1;
+  
+  int streak;
+  
+  int longest;
+  
+  int score;
+  
+  int rerolls;
+  
+  int wins;
+  
+  int losses;
+  
+  abstract int roll();
+  
+  abstract void reset();
+}
+//Child to the player class holds how many rolls are left, score, streak, wins, losses, and gives options of rolling or not to the player
+public class Player1 extends Player {
+  String pastRolls = "";
+  
+  int curRoll = 0;
+  
+  int prevRoll = 0;
+  
+  int streak = 0;
+  
+  int longest = 0;
+  
+  int score = 0;
+  
+  int rerolls = 3;
+  
+  int wins = 0;
+  
+  int losses = 0;
+  //Uses math.random to get a random number serving as a dice 
+  public int roll() {
+    return (int)(Math.random() * 6.0D) + 1;
+  }
+  //Resets the whole game 
+  public void reset() {
+    this.pastRolls = "";
+    this.curRoll = 0;
+    this.prevRoll = 0;
+    this.streak = 0;
+    this.longest = 0;
+    this.score = 0;
+    this.rerolls = 3;
+    this.wins = 0;
+    this.losses = 0;
+  }
+  //Gives the player option to roll again or reset the game
+  public int playerTurn(int i) {
+    this.prevRoll = this.curRoll;
+    this.curRoll = roll();
+    while (true) {
+      String input = JOP.in("Player one rolls a " + this.curRoll + ", do you want to reroll? You have " + this.rerolls + " rerolls left.\nY for yes, N for no, cancel to quit.");
+      if (input.equalsIgnoreCase("y") && this.rerolls > 0) {
+        this.curRoll = roll();
+        this.rerolls--;
+        continue;
+      } 
+      if (input.equalsIgnoreCase("y") && this.rerolls == 0) {
+        JOP.msg("You have no rerolls left.");
+        increment();
+        return this.curRoll;
+      } 
+      if (input.equalsIgnoreCase("n")) {
+        increment();
+        return this.curRoll;
+      } 
+      if (input == null) {
+        System.exit(0);
+        continue;
+      } 
+      break;
+    } 
+    JOP.msg("Invalid input, your roll is " + this.curRoll);
+    increment();
+    return this.curRoll;
+  }
+  //Increments the value of the longest streak if the player keeps winning
+  public void increment() {
+    if (this.curRoll == this.prevRoll) {
+      this.streak++;
+      if (this.streak > this.longest) {
+        this.longest = this.streak;
+        JOP.msg("New longest streak of " + this.longest + "!");
+      } 
+      this.score += this.curRoll * this.streak * 50;
+      JOP.msg("Player 1, your streak is " + this.streak + " long and worth " + (this.curRoll * this.streak * 50) + " points.");
+    } else {
+      this.streak = 0;
+    } 
+  }
+  //Gets the score per round
+  public int getScore() {
+    return this.score;
+  }
+  //Gets the streak
+  public int getStreak() {
+    return this.streak;
+  }
+  //Gets the longest streak
+  public int getLongest() {
+    return this.longest;
+  }
+  //Gets the amount of wins
+  public int getWins() {
+    return this.wins;
+  }
+  //Gets the number of losses
+  public int getLosses() {
+    return this.losses;
+  }
+  //Adds wins once player wins
+  public void addWin() {
+    this.wins++;
+  }
+  //Adds loss if player losses round
+  public void addLoss() {
+    this.losses++;
+  }
+}
+//Creates a second player which the player goes against, this is not a CPU btw
+public class Player2 extends Player {
+  String pastRolls = "";
+  
+  int curRoll = 0;
+  
+  int prevRoll = 0;
+  
+  int streak = 0;
+  
+  int longest = 0;
+  
+  int score = 0;
+  
+  int rerolls = 3;
+  
+  int wins = 0;
+  
+  int losses = 0;
+  
+  //Uses math.random to get a random number serving as a dice 
+  public int roll() {
+    return (int)(Math.random() * 6.0D) + 1;
+  }
+  //Resets the whole game 
+  public void reset() {
+    this.pastRolls = "";
+    this.curRoll = 0;
+    this.prevRoll = 0;
+    this.streak = 0;
+    this.longest = 0;
+    this.score = 0;
+    this.rerolls = 3;
+    this.wins = 0;
+    this.losses = 0;
+  }
+  //Gives the player option to roll again or reset the game
+  public int playerTurn(int i) {
+    this.prevRoll = this.curRoll;
+    this.curRoll = roll();
+    while (true) {
+      String input = JOP.in("Player one rolls a " + this.curRoll + ", do you want to reroll? You have " + this.rerolls + " rerolls left.\nY for yes, N for no, cancel to quit.");
+      if (input.equalsIgnoreCase("y") && this.rerolls > 0) {
+        this.curRoll = roll();
+        this.rerolls--;
+        continue;
+      } 
+      if (input.equalsIgnoreCase("y") && this.rerolls == 0) {
+        JOP.msg("You have no rerolls left.");
+        increment();
+        return this.curRoll;
+      } 
+      if (input.equalsIgnoreCase("n")) {
+        increment();
+        return this.curRoll;
+      } 
+      if (input == null) {
+        System.exit(0);
+        continue;
+      } 
+      break;
+    } 
+    JOP.msg("Invalid input, your roll is " + this.curRoll);
+    increment();
+    return this.curRoll;
+  }
+  //Increments the value of the longest streak if the player keeps winning
+  public void increment() {
+    if (this.curRoll == this.prevRoll) {
+      this.streak++;
+      if (this.streak > this.longest) {
+        this.longest = this.streak;
+        JOP.msg("New longest streak of " + this.longest + "!");
+      } 
+      this.score += this.curRoll * this.streak * 50;
+      JOP.msg("Player 1, your streak is " + this.streak + " long and worth " + (this.curRoll * this.streak * 50) + " points.");
+    } else {
+      this.streak = 0;
+    } 
+  }
+  //Gets the score per round
+  public int getScore() {
+    return this.score;
+  }
+  //Gets the streak
+  public int getStreak() {
+    return this.streak;
+  }
+  //Gets the longest streak
+  public int getLongest() {
+    return this.longest;
+  }
+  //Gets the amount of wins
+  public int getWins() {
+    return this.wins;
+  }
+  //Gets the number of losses
+  public int getLosses() {
+    return this.losses;
+  }
+  //Adds wins once player wins
+  public void addWin() {
+    this.wins++;
+  }
+  //Adds loss if player losses round
+  public void addLoss() {
+    this.losses++;
+  }
+}
+//Creates a controller class which puts the players or cpu and player together
+public class Controller {
+  public Controller(Player1 plr1, Player2 plr2, Computer cpu) {}
+}
+//Creates a CPU which goes against the player 
+public class Computer extends Player {
+  String pastRolls = "";
+  
+  int curRoll = 0;
+  
+  int prevRoll = 0;
+  
+  int streak = 0;
+  
+  int longest = 0;
+  
+  int score = 0;
+  
+  int rerolls = 3;
+  
+  int wins = 0;
+  
+  int losses = 0;
+  //Gets the roll of the CPU
+  public int roll() {
+    return (int)(Math.random() * 6.0D) + 1;
+  }
+ //Resets the CPU's data 
+  public void reset() {
+    this.pastRolls = "";
+    this.curRoll = 0;
+    this.prevRoll = 0;
+    this.streak = 0;
+    this.longest = 0;
+    this.score = 0;
+    this.rerolls = 3;
+    this.wins = 0;
+    this.losses = 0;
+  }
+  //Gives the roll the CPU game and shows it once player makes a choice
+  public void computerTurn(int i) {
+    this.prevRoll = this.curRoll;
+    this.curRoll = roll();
+    if (this.curRoll != this.prevRoll && 
+      Math.random() * 2.0D >= 1.0D && this.rerolls != 0)
+      this.curRoll = roll(); 
+    if (this.curRoll != this.prevRoll && 
+      Math.random() * 2.0D >= 1.25D && this.rerolls != 0)
+      this.curRoll = roll(); 
+    if (this.curRoll != this.prevRoll && 
+      Math.random() * 2.0D >= 1.5D && this.rerolls != 0)
+      this.curRoll = roll(); 
+    JOP.msg("Computer rolls a " + this.curRoll);
+    increment();
+  }
+  //Holds the longest streak for the CPU
+  public void increment() {
+    if (this.curRoll == this.prevRoll) {
+      this.streak++;
+      if (this.streak > this.longest) {
+        this.longest = this.streak;
+        JOP.msg("New longest streak of " + this.longest + "!");
+      } 
+      this.score += this.curRoll * this.streak * 50;
+      JOP.msg("Computer's streak is " + this.streak + " long and worth " + (this.curRoll * this.streak * 50) + " points.");
+    } else {
+      this.streak = 0;
+    } 
+  }
+  //Gets the score of the CPU
+  public int getScore() {
+    return this.score;
+  }
+  //Gets the streak of the CPU
+  public int getStreak() {
+    return this.streak;
+  }
+  //Gets the longest streak by the CPU
+  public int getLongest() {
+    return this.longest;
+  }
+  //Gets the number of wins of the CPU
+  public int getWins() {
+    return this.wins;
+  }
+  //Gets the number of losses of the CPU
+  public int getLosses() {
+    return this.losses;
+  }
+  //Adds a win once the CPU won against the user
+  public void addWin() {
+    this.wins++;
+  }
+  //Adds loss if the computer lost against player
+  public void addLoss() {
+    this.losses++;
+  }
+}
+
